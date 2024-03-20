@@ -3,6 +3,13 @@
 static TIM_HandleTypeDef htim1;
 static DMA_HandleTypeDef hdma_tim1_ch1;
 
+void Error_Handler()
+{
+    while (true)
+    {
+    }
+}
+
 extern "C" void SysTick_Handler(void)
 {
     HAL_IncTick();
@@ -54,7 +61,7 @@ void rcc()
     RCC_OscInitStruct.PLL.PLLFRACN = 0;
     if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
     {
-        // Error_Handler();
+        Error_Handler();
     }
 
     /** Initializes the CPU, AHB and APB buses clocks
@@ -68,7 +75,8 @@ void rcc()
     RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV2;
     RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV2;
 
-    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
+    auto value = HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4);
+    if (value != HAL_OK)
     {
         // Error_Handler();
     }
@@ -127,23 +135,23 @@ void setupPWM()
     htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
     if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
     {
-        // Error_Handler();
+        Error_Handler();
     }
     sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
     if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
     {
-        // Error_Handler();
+        Error_Handler();
     }
     if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
     {
-        // Error_Handler();
+        Error_Handler();
     }
     sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
     sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
     sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
     if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
     {
-        // Error_Handler();
+        Error_Handler();
     }
     sConfigOC.OCMode = TIM_OCMODE_PWM1;
     sConfigOC.Pulse = 500 - 1;
@@ -154,7 +162,7 @@ void setupPWM()
     sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
     if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
     {
-        // Error_Handler();
+        Error_Handler();
     }
     sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
     sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
@@ -169,7 +177,7 @@ void setupPWM()
     sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
     if (HAL_TIMEx_ConfigBreakDeadTime(&htim1, &sBreakDeadTimeConfig) != HAL_OK)
     {
-        // Error_Handler();
+        Error_Handler();
     }
 
     __HAL_RCC_DMA1_CLK_ENABLE();
@@ -197,7 +205,7 @@ void setupPWM()
     };
     if (HAL_DMA_Init(&hdma_tim1_ch1) != HAL_OK)
     {
-        // Error_Handler();
+        Error_Handler();
     }
 
     __HAL_LINKDMA(&htim1, hdma[TIM_DMA_ID_CC1], hdma_tim1_ch1);
@@ -219,7 +227,9 @@ int main()
     {
         data[i] = i * 10;
     }
-
+    // DMA_Base_Registers *regs_dma = (DMA_Base_Registers *)hdma_tim1_ch1->StreamBaseAddress;
+    // DMA1_Stream0->
+    // regs_dma->IFCR = DMA_FLAG_TEIF0_4 << (hdma->StreamIndex & 0x1FU);
     HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t *)data, 100);
     // HAL_Delay(5000);
     // HAL_TIM_PWM_Stop_DMA(&htim1, TIM_CHANNEL_1);
@@ -231,20 +241,5 @@ int main()
         HAL_GPIO_WritePin(GPIOE, GPIO_PIN_1, GPIO_PIN_RESET);
         HAL_Delay(1000);
     }
-    return 0;
-
-    // RCC->AHB4ENR |= RCC_AHB4ENR_GPIOEEN;
-
-    // // GPIOE->MODER &= ~GPIO_MODER_MODE1;
-    // GPIOE->MODER |= GPIO_MODER_MODE1_0;
-
-    // // GPIOE->OTYPER &= ~GPIO_OTYPER_OT1;
-    // // GPIOE->OSPEEDR &= ~GPIO_OSPEEDR_OSPEED1;
-    // // GPIOE->PUPDR &= ~GPIO_PUPDR_PUPD1;
-
-    // GPIOE->BSRR = GPIO_BSRR_BS1;
-    // while (true)
-    // {
-    // }
     return 0;
 }
